@@ -86,8 +86,8 @@ export function useTasks(userId: string | undefined) {
     repeat: "once" | "weekly";
     dayIdx: number;
     dateISO: string;
-  }): Promise<boolean> => {
-    if (!userId) return false;
+  }): Promise<string | null> => {
+    if (!userId) return null;
     const { text, duration, repeat, dayIdx, dateISO } = params;
 
     const { data, error } = await supabase
@@ -103,7 +103,7 @@ export function useTasks(userId: string | undefined) {
       .select()
       .single();
 
-    if (error || !data) return false;
+    if (error || !data) return null;
 
     setTasks((prev) => [
       ...prev,
@@ -116,7 +116,7 @@ export function useTasks(userId: string | undefined) {
         date: data.date ?? undefined,
       },
     ]);
-    return true;
+    return data.id;
   };
 
   return { tasks, completed, getTasksForDay, toggleTask, removeTask, addTask };

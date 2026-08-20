@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { Check, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabaseClient";
-import { DAY_NAMES, SHORT_NAMES, formatWeekRange, getWeekDates, isToday, isPastDate, toISODate } from "../lib/dateUtils";
+import { DAY_NAMES, SHORT_NAMES, formatWeekRange, getWeekDates, isToday, isPastDate, isFutureDate, toISODate } from "../lib/dateUtils";
 import { occurrenceKey, type TaskDef } from "../hooks/useTasks";
 import { TaskRow } from "../components/TaskRow";
 
@@ -40,23 +40,28 @@ export function WeekGridPage({
     const today = isToday(date);
     const isWeekend = dayIdx >= 5;
     const isPast = isPastDate(dateISO, todayISO);
+    const isFuture = isFutureDate(dateISO, todayISO);
 
     return (
       <div
+        onClick={() => navigate(`/day/${dateISO}`)}
+        role="link"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") navigate(`/day/${dateISO}`);
+        }}
         className={[
-          "flex flex-col rounded-2xl overflow-hidden transition-all duration-200",
-          today ? "shadow-lg ring-2 ring-[#e13599]/30" : "border border-[#e13599]/15",
+          "group flex flex-col rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer",
+          "hover:shadow-xl hover:-translate-y-1",
+          today ? "shadow-lg ring-2 ring-[#e13599]/30 hover:ring-[#e13599]/50" : "border border-[#e13599]/15 hover:border-[#e13599]/40",
         ].join(" ")}
         style={{
           background: today ? "#fbd7e9" : isWeekend ? "#fff0f8" : "#fff5fb",
           minHeight: 480,
         }}
       >
-        {/* Header — click to open the day page */}
-        <button
-          onClick={() => navigate(`/day/${dateISO}`)}
-          className={["w-full text-left px-4 pt-4 pb-3 transition-colors duration-150", today ? "bg-[#f7c0dd]" : ""].join(" ")}
-        >
+        {/* Header */}
+        <div className={["px-4 pt-4 pb-3", today ? "bg-[#f7c0dd]" : ""].join(" ")}>
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: today ? "#a8447a" : "#8a4066" }}>
               {DAY_NAMES[dayIdx]}
@@ -82,7 +87,7 @@ export function WeekGridPage({
               </p>
             </div>
           )}
-        </button>
+        </div>
 
         {/* Divider */}
         <div style={{ height: 1, background: "rgba(225,53,153,0.12)", margin: "0 16px" }} />
@@ -101,6 +106,7 @@ export function WeekGridPage({
               task={task}
               isDone={!!completed[occurrenceKey(task.id, dateISO)]}
               isPast={isPast}
+              isFuture={isFuture}
               tint={today}
               onToggle={() => toggleTask(task.id, dateISO)}
               onRemove={() => removeTask(task.id)}
@@ -108,15 +114,7 @@ export function WeekGridPage({
           ))}
         </div>
 
-        <div className="px-3 pb-3 pt-1">
-          <button
-            onClick={() => navigate(`/day/${dateISO}`)}
-            className="w-full text-center py-1.5 text-[10px] font-bold"
-            style={{ color: "#a8447a" }}
-          >
-            Open day →
-          </button>
-        </div>
+        <div className="pb-3" />
       </div>
     );
   }
@@ -147,7 +145,7 @@ export function WeekGridPage({
 
           <button
             onClick={() => supabase.auth.signOut()}
-            className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition-all duration-150"
+            className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition-all duration-150 hover:brightness-95 active:brightness-90 cursor-pointer"
             style={{ color: "#8a4066", background: "rgba(225,53,153,0.08)" }}
             title={session.user.email ?? undefined}
           >
@@ -193,7 +191,7 @@ export function WeekGridPage({
                 <button
                   key={i}
                   onClick={() => setActiveMobile(i)}
-                  className="flex flex-col items-center px-3 py-2 rounded-xl transition-all duration-150"
+                  className="flex flex-col items-center px-3 py-2 rounded-xl transition-all duration-150 hover:brightness-95 active:brightness-90 cursor-pointer"
                   style={{
                     background: active ? "#e13599" : today ? "#fff0f8" : "#fff5fb",
                     border: `2px solid ${active ? "#e13599" : today ? "#e13599" : "rgba(225,53,153,0.15)"}`,
@@ -248,7 +246,7 @@ export function WeekGridPage({
       <div className="flex justify-center gap-3 pb-10">
         <button
           onClick={() => setWeekOffset((w) => w - 1)}
-          className="flex items-center gap-2 h-11 px-5 rounded-2xl border transition-all duration-150 hover:scale-105"
+          className="flex items-center gap-2 h-11 px-5 rounded-2xl border transition-all duration-150 hover:scale-105 hover:brightness-95 active:scale-100 cursor-pointer"
           style={{ borderColor: "rgba(225,53,153,0.2)", background: "#fff5fb", color: "#1c0411" }}
         >
           <ChevronLeft size={16} />
@@ -256,7 +254,7 @@ export function WeekGridPage({
         </button>
         <button
           onClick={() => setWeekOffset((w) => w + 1)}
-          className="flex items-center gap-2 h-11 px-5 rounded-2xl border transition-all duration-150 hover:scale-105"
+          className="flex items-center gap-2 h-11 px-5 rounded-2xl border transition-all duration-150 hover:scale-105 hover:brightness-95 active:scale-100 cursor-pointer"
           style={{ borderColor: "rgba(225,53,153,0.2)", background: "#fff5fb", color: "#1c0411" }}
         >
           <span className="text-xs font-bold">Next week</span>

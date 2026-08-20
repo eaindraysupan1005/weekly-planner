@@ -102,5 +102,21 @@ export function useTimers(userId: string | undefined, dateISO: string) {
     await supabase.from("timers").delete().eq("id", id);
   };
 
-  return { timers, startTimer, pauseTimer, resumeTimer, deleteTimer };
+  const stopTimer = async (id: string): Promise<{ taskName: string; elapsedSeconds: number } | null> => {
+    const timer = timers.find((t) => t.id === id);
+    if (!timer) return null;
+
+    const extra =
+      timer.isRunning && timer.startedAt
+        ? Math.max(0, Math.floor((Date.now() - new Date(timer.startedAt).getTime()) / 1000))
+        : 0;
+    const finalElapsed = timer.elapsedSeconds + extra;
+
+    setTimers((prev) => prev.filter((t) => t.id !== id));
+    await supabase.from("timers").delete().eq("id", id);
+
+    return { taskName: timer.taskName, elapsedSeconds: finalElapsed };
+  };
+
+  return { timers, startTimer, pauseTimer, resumeTimer, deleteTimer, stopTimer };
 }

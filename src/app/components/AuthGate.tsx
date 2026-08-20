@@ -37,7 +37,7 @@ function PasswordInput({
       <button
         type="button"
         onClick={() => setVisible((v) => !v)}
-        className="absolute right-0 top-0 h-full w-9 flex items-center justify-center text-muted-foreground"
+        className="absolute right-0 top-0 h-full w-9 flex items-center justify-center text-muted-foreground transition-colors duration-150 hover:text-foreground cursor-pointer"
         tabIndex={-1}
         aria-label={visible ? "Hide password" : "Show password"}
       >
@@ -195,7 +195,7 @@ export function AuthGate() {
               <button
                 type="button"
                 onClick={() => switchMode("signup")}
-                className="underline"
+                className="underline transition-opacity duration-150 hover:opacity-70 cursor-pointer"
                 style={{ color: "#e13599" }}
               >
                 Sign up
@@ -207,7 +207,7 @@ export function AuthGate() {
               <button
                 type="button"
                 onClick={() => switchMode("signin")}
-                className="underline"
+                className="underline transition-opacity duration-150 hover:opacity-70 cursor-pointer"
                 style={{ color: "#e13599" }}
               >
                 Sign in

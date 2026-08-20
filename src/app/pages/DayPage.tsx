@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ArrowLeft, Plus, Timer } from "lucide-react";
-import { DAY_NAMES, dayIdxOf, fromISODate, isPastDate, isToday } from "../lib/dateUtils";
+import { DAY_NAMES, dayIdxOf, fromISODate, isFutureDate, isPastDate, isToday } from "../lib/dateUtils";
 import { occurrenceKey, type TaskDef } from "../hooks/useTasks";
 import { useTimers } from "../hooks/useTimers";
+import { useTaskTimers } from "../hooks/useTaskTimers";
 import { TaskRow } from "../components/TaskRow";
 import { TaskModal } from "../components/TaskModal";
 import { TimerStartModal } from "../components/TimerStartModal";
 import { TimerCard } from "../components/TimerCard";
+import { TaskTimerCard } from "../components/TaskTimerCard";
 
 export function DayPage({
   userId,
@@ -23,7 +25,13 @@ export function DayPage({
   getTasksForDay: (dayIdx: number, dateISO: string) => TaskDef[];
   toggleTask: (taskId: string, dateISO: string) => void;
   removeTask: (taskId: string) => void;
-  addTask: (params: { text: string; duration: number; repeat: "once" | "weekly"; dayIdx: number; dateISO: string }) => Promise<boolean>;
+  addTask: (params: {
+    text: string;
+    duration: number;
+    repeat: "once" | "weekly";
+    dayIdx: number;
+    dateISO: string;
+  }) => Promise<string | null>;
   todayISO: string;
 }) {
   const navigate = useNavigate();
@@ -35,13 +43,44 @@ export function DayPage({
   const dayIdx = dayIdxOf(date);
   const today = isToday(date);
   const isPast = dateISO ? isPastDate(dateISO, todayISO) : false;
+  const isFuture = dateISO ? isFutureDate(dateISO, todayISO) : false;
   const dayTasks = dateISO ? getTasksForDay(dayIdx, dateISO) : [];
   const done = dayTasks.filter((t) => dateISO && completed[occurrenceKey(t.id, dateISO)]).length;
   const total = dayTasks.length;
 
-  const { timers, startTimer, pauseTimer, resumeTimer, deleteTimer } = useTimers(
+  const { timers, startTimer, pauseTimer, resumeTimer, deleteTimer, stopTimer } = useTimers(
     today ? userId : undefined,
     dateISO ?? todayISO,
+  );
+
+  const handleStopTimer = async (timerId: string) => {
+    const result = await stopTimer(timerId);
+    if (!result || !dateISO) return;
+
+    const durationMinutes = Math.max(1, Math.round(result.elapsedSeconds / 60));
+    const newTaskId = await addTask({
+      text: result.taskName,
+      duration: durationMinutes / 60,
+      repeat: "once",
+      dayIdx,
+      dateISO,
+    });
+    if (newTaskId) {
+      toggleTask(newTaskId, dateISO);
+    } else {
+      window.alert(
+        "Couldn't save the timed task. If this keeps happening, your \"tasks\" table's duration column " +
+          "needs to be changed to numeric — see supabase/schema.sql for the migration.",
+      );
+    }
+  };
+
+  const { taskTimers, startTaskTimer, pauseTaskTimer, resumeTaskTimer } = useTaskTimers(
+    today ? userId : undefined,
+    dateISO ?? todayISO,
+    (taskId) => {
+      if (dateISO) toggleTask(taskId, dateISO);
+    },
   );
 
   if (!dateISO) return null;
@@ -55,7 +94,7 @@ export function DayPage({
         <div className="max-w-2xl mx-auto px-4 sm:px-8 py-4 flex items-center gap-3">
           <button
             onClick={() => navigate("/")}
-            className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition-all duration-150"
+            className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition-all duration-150 hover:brightness-95 active:brightness-90 cursor-pointer"
             style={{ color: "#8a4066", background: "rgba(225,53,153,0.08)" }}
           >
             <ArrowLeft size={14} />
@@ -101,7 +140,7 @@ export function DayPage({
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setModalOpen(true)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold transition-all duration-150"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold transition-all duration-150 hover:brightness-95 hover:scale-[1.02] active:scale-100 cursor-pointer"
             style={{ background: "rgba(225,53,153,0.1)", color: "#1c0411" }}
           >
             <Plus size={15} strokeWidth={2.5} />
@@ -111,7 +150,7 @@ export function DayPage({
           {today && (
             <button
               onClick={() => setTimerModalOpen(true)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold transition-all duration-150"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold transition-all duration-150 hover:brightness-110 hover:scale-[1.02] active:scale-100 cursor-pointer"
               style={{ background: "#e13599", color: "#ffffff" }}
             >
               <Timer size={15} strokeWidth={2.5} />
@@ -133,12 +172,39 @@ export function DayPage({
               task={task}
               isDone={!!completed[occurrenceKey(task.id, dateISO)]}
               isPast={isPast}
+              isFuture={isFuture}
               tint={today}
               onToggle={() => toggleTask(task.id, dateISO)}
               onRemove={() => removeTask(task.id)}
+              onStartTimer={
+                today ? () => startTaskTimer(task.id, Math.max(60, Math.round(task.duration * 3600))) : undefined
+              }
+              hasActiveTimer={taskTimers.some((t) => t.taskId === task.id)}
             />
           ))}
         </div>
+
+        {/* Task timers (countdown for existing tasks) */}
+        {today && taskTimers.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <h2 className="text-sm font-black flex items-center gap-1.5" style={{ color: "#1c0411" }}>
+              <Timer size={14} />
+              Task timers
+            </h2>
+            {taskTimers.map((taskTimer) => {
+              const linkedTask = dayTasks.find((t) => t.id === taskTimer.taskId);
+              return (
+                <TaskTimerCard
+                  key={taskTimer.id}
+                  timer={taskTimer}
+                  taskName={linkedTask?.text ?? "Task"}
+                  onPause={() => pauseTaskTimer(taskTimer.id)}
+                  onResume={() => resumeTaskTimer(taskTimer.id)}
+                />
+              );
+            })}
+          </div>
+        )}
 
         {/* Timers */}
         {today && timers.length > 0 && (
@@ -154,6 +220,7 @@ export function DayPage({
                 onPause={() => pauseTimer(timer.id)}
                 onResume={() => resumeTimer(timer.id)}
                 onDelete={() => deleteTimer(timer.id)}
+                onStop={() => handleStopTimer(timer.id)}
               />
             ))}
           </div>
@@ -166,8 +233,8 @@ export function DayPage({
         dayName={DAY_NAMES[dayIdx]}
         isPast={isPast}
         onSubmit={async ({ text, duration, repeat }) => {
-          const ok = await addTask({ text, duration, repeat, dayIdx, dateISO });
-          if (ok) setModalOpen(false);
+          const newTaskId = await addTask({ text, duration, repeat, dayIdx, dateISO });
+          if (newTaskId) setModalOpen(false);
         }}
       />
 

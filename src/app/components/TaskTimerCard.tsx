@@ -1,27 +1,26 @@
 import { useEffect, useState } from "react";
-import { Pause, Play, Square, X } from "lucide-react";
-import type { TimerDef } from "../hooks/useTimers";
+import { Pause, Play } from "lucide-react";
+import type { TaskTimerDef } from "../hooks/useTaskTimers";
 
-function formatElapsed(totalSeconds: number): string {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
+function formatRemaining(totalSeconds: number): string {
+  const s = Math.max(0, totalSeconds);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
   const pad = (n: number) => String(n).padStart(2, "0");
-  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+  return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
 }
 
-export function TimerCard({
+export function TaskTimerCard({
   timer,
+  taskName,
   onPause,
   onResume,
-  onDelete,
-  onStop,
 }: {
-  timer: TimerDef;
+  timer: TaskTimerDef;
+  taskName: string;
   onPause: () => void;
   onResume: () => void;
-  onDelete: () => void;
-  onStop: () => void;
 }) {
   const [, setTick] = useState(0);
 
@@ -36,6 +35,7 @@ export function TimerCard({
     (timer.isRunning && timer.startedAt
       ? Math.max(0, Math.floor((Date.now() - new Date(timer.startedAt).getTime()) / 1000))
       : 0);
+  const remaining = Math.max(0, timer.targetSeconds - liveElapsed);
 
   return (
     <div
@@ -47,13 +47,13 @@ export function TimerCard({
           className="text-sm font-bold break-words"
           style={{ fontFamily: "Georgia, 'Times New Roman', serif", color: "#1c0411" }}
         >
-          {timer.taskName}
+          {taskName}
         </p>
         <p
           className="text-2xl font-black tabular-nums mt-0.5"
           style={{ color: timer.isRunning ? "#e13599" : "#8a4066" }}
         >
-          {formatElapsed(liveElapsed)}
+          {formatRemaining(remaining)}
         </p>
       </div>
 
@@ -64,24 +64,6 @@ export function TimerCard({
         aria-label={timer.isRunning ? "Pause" : "Resume"}
       >
         {timer.isRunning ? <Pause size={15} fill="#ffffff" /> : <Play size={15} fill="#ffffff" />}
-      </button>
-
-      <button
-        onClick={onStop}
-        className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150 hover:brightness-110 hover:scale-110 active:scale-100 cursor-pointer"
-        style={{ background: "#1c0411", color: "#ffffff" }}
-        aria-label="Stop and save as completed task"
-        title="Stop and save as completed task"
-      >
-        <Square size={13} fill="#ffffff" />
-      </button>
-
-      <button
-        onClick={onDelete}
-        className="flex-shrink-0 transition-all duration-150 hover:scale-125 text-[#c9a0b8] hover:text-[#e13599] cursor-pointer"
-        aria-label="Delete timer"
-      >
-        <X size={14} />
       </button>
     </div>
   );

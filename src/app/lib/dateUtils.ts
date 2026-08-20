@@ -46,6 +46,10 @@ export function isPastDate(dateISO: string, todayISO: string): boolean {
   return dateISO < todayISO;
 }
 
+export function isFutureDate(dateISO: string, todayISO: string): boolean {
+  return dateISO > todayISO;
+}
+
 export function dayIdxOf(date: Date): number {
   const dow = date.getDay();
   return dow === 0 ? 6 : dow - 1;
