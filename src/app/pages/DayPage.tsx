@@ -75,13 +75,20 @@ export function DayPage({
     }
   };
 
-  const { taskTimers, startTaskTimer, pauseTaskTimer, resumeTaskTimer } = useTaskTimers(
+  const { taskTimers, startTaskTimer, pauseTaskTimer, resumeTaskTimer, removeTaskTimerForTask } = useTaskTimers(
     today ? userId : undefined,
     dateISO ?? todayISO,
     (taskId) => {
       if (dateISO) toggleTask(taskId, dateISO);
     },
   );
+
+  const handleToggleTask = (taskId: string) => {
+    if (!dateISO) return;
+    const willBeDone = !completed[occurrenceKey(taskId, dateISO)];
+    if (willBeDone) removeTaskTimerForTask(taskId);
+    toggleTask(taskId, dateISO);
+  };
 
   if (!dateISO) return null;
 
@@ -174,10 +181,20 @@ export function DayPage({
               isPast={isPast}
               isFuture={isFuture}
               tint={today}
-              onToggle={() => toggleTask(task.id, dateISO)}
+              onToggle={() => handleToggleTask(task.id)}
               onRemove={() => removeTask(task.id)}
               onStartTimer={
-                today ? () => startTaskTimer(task.id, Math.max(60, Math.round(task.duration * 3600))) : undefined
+                today
+                  ? async () => {
+                      const ok = await startTaskTimer(task.id, Math.max(60, Math.round(task.duration * 3600)));
+                      if (!ok) {
+                        window.alert(
+                          "Couldn't start the task timer. Make sure the \"task_timers\" table exists — " +
+                            "see supabase/schema.sql for the setup SQL.",
+                        );
+                      }
+                    }
+                  : undefined
               }
               hasActiveTimer={taskTimers.some((t) => t.taskId === task.id)}
             />

@@ -64,7 +64,10 @@ export function useTaskTimers(
       .select()
       .single();
 
-    if (error || !data) return false;
+    if (error || !data) {
+      console.error("Failed to start task timer:", error);
+      return false;
+    }
 
     setTaskTimers((prev) => [
       ...prev,
@@ -108,6 +111,14 @@ export function useTaskTimers(
     await supabase.from("task_timers").update({ is_running: true, started_at: startedAt }).eq("id", id);
   };
 
+  const removeTaskTimerForTask = async (taskId: string) => {
+    const timer = taskTimers.find((t) => t.taskId === taskId);
+    if (!timer) return;
+
+    setTaskTimers((prev) => prev.filter((t) => t.id !== timer.id));
+    await supabase.from("task_timers").delete().eq("id", timer.id);
+  };
+
   // Ticks once a second to detect when a running countdown has reached zero,
   // so the linked task gets auto-completed even if no card re-renders it.
   useEffect(() => {
@@ -125,5 +136,5 @@ export function useTaskTimers(
     return () => clearInterval(interval);
   }, [taskTimers, onComplete]);
 
-  return { taskTimers, startTaskTimer, pauseTaskTimer, resumeTaskTimer };
+  return { taskTimers, startTaskTimer, pauseTaskTimer, resumeTaskTimer, removeTaskTimerForTask };
 }

@@ -32,9 +32,11 @@ export function TaskRow({
 }) {
   return (
     <div
-      className="group flex items-start gap-2 px-2.5 py-2 rounded-xl transition-all duration-150 hover:brightness-95"
+      className="group flex items-start gap-2.5 px-3.5 py-3.5 rounded-2xl border transition-all duration-150 hover:brightness-95 hover:shadow-md"
       style={{
         background: isDone ? "rgba(245,216,234,0.4)" : tint ? "rgba(255,255,255,0.55)" : "rgba(255,245,251,0.8)",
+        borderColor: "rgba(225,53,153,0.15)",
+        boxShadow: "0 1px 3px rgba(28,4,17,0.06)",
       }}
     >
       <button
@@ -45,7 +47,7 @@ export function TaskRow({
         }}
         disabled={isFuture}
         title={isFuture ? "Can't mark future tasks as complete" : undefined}
-        className="mt-0.5 flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-150 hover:scale-125"
+        className="mt-1 flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-150 hover:scale-125"
         style={{
           background: isDone ? "#e6e35a" : "transparent",
           borderColor: isDone ? "#1c0411" : "#d490b8",
@@ -53,13 +55,13 @@ export function TaskRow({
           opacity: isFuture ? 0.5 : 1,
         }}
       >
-        {isDone && <Check size={9} strokeWidth={3.5} color="#1c0411" />}
+        {isDone && <Check size={11} strokeWidth={3.5} color="#1c0411" />}
       </button>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center flex-wrap gap-2">
           <span
-            className="text-sm leading-relaxed break-words font-bold"
+            className="text-[15px] leading-relaxed break-words font-bold"
             style={{
               fontFamily: "Georgia, 'Times New Roman', serif",
               color: isDone ? "#c9a0b8" : "#1c0411",
@@ -97,7 +99,7 @@ export function TaskRow({
             e.stopPropagation();
             onRemove();
           }}
-          className="flex-shrink-0 mt-0.5 transition-all duration-150 hover:scale-125 text-[#c9a0b8] hover:text-[#e13599] cursor-pointer"
+          className="flex-shrink-0 mt-1 transition-all duration-150 hover:scale-125 text-[#c9a0b8] hover:text-[#e13599] cursor-pointer"
         >
           <X size={11} />
         </button>
