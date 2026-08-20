@@ -20,16 +20,16 @@ export function TaskModal({
   onOpenChange: (open: boolean) => void;
   dayName: string;
   isPast: boolean;
-  onSubmit: (params: { text: string; duration: number; repeat: "once" | "weekly" }) => void;
+  onSubmit: (params: { text: string; duration: number; repeat: "once" | "weekly" | "daily" }) => void;
 }) {
   const [text, setText] = useState("");
-  const [repeat, setRepeat] = useState<"once" | "weekly">("once");
+  const [repeat, setRepeat] = useState<"once" | "weekly" | "daily">("weekly");
   const [duration, setDuration] = useState(1);
 
   useEffect(() => {
     if (open) {
       setText("");
-      setRepeat("once");
+      setRepeat("weekly");
       setDuration(1);
     }
   }, [open]);
@@ -74,7 +74,7 @@ export function TaskModal({
           {!isPast && (
             <div className="flex flex-col gap-2">
               <Label>Repeat</Label>
-              <RadioGroup value={repeat} onValueChange={(v) => setRepeat(v as "once" | "weekly")}>
+              <RadioGroup value={repeat} onValueChange={(v) => setRepeat(v as "once" | "weekly" | "daily")}>
                 <div className="flex items-center gap-2">
                   <RadioGroupItem value="once" id="repeat-once" />
                   <Label htmlFor="repeat-once" className="font-normal">
@@ -85,6 +85,12 @@ export function TaskModal({
                   <RadioGroupItem value="weekly" id="repeat-weekly" />
                   <Label htmlFor="repeat-weekly" className="font-normal">
                     Repeats every {dayName}
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="daily" id="repeat-daily" />
+                  <Label htmlFor="repeat-daily" className="font-normal">
+                    Repeat daily
                   </Label>
                 </div>
               </RadioGroup>

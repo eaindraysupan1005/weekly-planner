@@ -5,7 +5,7 @@ create table if not exists public.tasks (
   user_id uuid not null references auth.users(id) on delete cascade,
   text text not null,
   duration numeric not null default 1, -- hours; fractional for timer-logged tasks
-  repeat text not null check (repeat in ('once', 'weekly')),
+  repeat text not null check (repeat in ('once', 'weekly', 'daily')),
   day_idx integer not null check (day_idx between 0 and 6),
   date date, -- only set when repeat = 'once'
   created_at timestamptz not null default now()
@@ -13,6 +13,10 @@ create table if not exists public.tasks (
 
 -- If you created the table before duration became fractional, run this once:
 -- alter table public.tasks alter column duration type numeric using duration::numeric;
+
+-- If you created the table before "Repeat daily" was added, run this once:
+-- alter table public.tasks drop constraint tasks_repeat_check;
+-- alter table public.tasks add constraint tasks_repeat_check check (repeat in ('once', 'weekly', 'daily'));
 
 create table if not exists public.task_completions (
   task_id uuid not null references public.tasks(id) on delete cascade,

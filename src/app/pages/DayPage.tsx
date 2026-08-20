@@ -28,7 +28,7 @@ export function DayPage({
   addTask: (params: {
     text: string;
     duration: number;
-    repeat: "once" | "weekly";
+    repeat: "once" | "weekly" | "daily";
     dayIdx: number;
     dateISO: string;
   }) => Promise<string | null>;

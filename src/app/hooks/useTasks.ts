@@ -5,7 +5,7 @@ export interface TaskDef {
   id: string;
   text: string;
   duration: number; // hours
-  repeat: "once" | "weekly";
+  repeat: "once" | "weekly" | "daily";
   dayIdx: number;
   date?: string; // ISO date, only set when repeat === "once"
 }
@@ -51,7 +51,9 @@ export function useTasks(userId: string | undefined) {
   }, [userId]);
 
   const getTasksForDay = (dayIdx: number, dateISO: string): TaskDef[] =>
-    tasks.filter((t) => t.dayIdx === dayIdx && (t.repeat === "weekly" || t.date === dateISO));
+    tasks.filter(
+      (t) => t.repeat === "daily" || (t.dayIdx === dayIdx && (t.repeat === "weekly" || t.date === dateISO)),
+    );
 
   const toggleTask = async (taskId: string, dateISO: string) => {
     if (!userId) return;
@@ -83,7 +85,7 @@ export function useTasks(userId: string | undefined) {
   const addTask = async (params: {
     text: string;
     duration: number;
-    repeat: "once" | "weekly";
+    repeat: "once" | "weekly" | "daily";
     dayIdx: number;
     dateISO: string;
   }): Promise<string | null> => {
