@@ -29,6 +29,22 @@ export function WeekGridPage({
     return dow === 0 ? 6 : dow - 1;
   });
 
+  const handleToggleTask = (taskId: string, dateISO: string) => {
+    const willBeDone = !completed[occurrenceKey(taskId, dateISO)];
+    if (willBeDone) {
+      supabase
+        .from("task_timers")
+        .delete()
+        .eq("user_id", session.user.id)
+        .eq("task_id", taskId)
+        .eq("date", dateISO)
+        .then(({ error }) => {
+          if (error) console.error("Failed to remove task timer on completion:", error);
+        });
+    }
+    toggleTask(taskId, dateISO);
+  };
+
   const weekDates = getWeekDates(weekOffset);
 
   const createdAtMonday = getMonday(new Date(session.user.created_at ?? Date.now()));
@@ -115,7 +131,7 @@ export function WeekGridPage({
               isPast={isPast}
               isFuture={isFuture}
               tint={today}
-              onToggle={() => toggleTask(task.id, dateISO)}
+              onToggle={() => handleToggleTask(task.id, dateISO)}
               onRemove={() => removeTask(task.id)}
             />
           ))}

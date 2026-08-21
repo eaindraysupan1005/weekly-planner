@@ -32,17 +32,33 @@ export function useTaskTimers(
         .eq("date", dateISO)
         .order("created_at", { ascending: true });
 
-      setTaskTimers(
-        (data ?? []).map((row) => ({
-          id: row.id,
-          taskId: row.task_id,
-          date: row.date,
-          targetSeconds: row.target_seconds,
-          elapsedSeconds: row.elapsed_seconds,
-          isRunning: row.is_running,
-          startedAt: row.started_at,
-        })),
-      );
+      const loaded = (data ?? []).map((row) => ({
+        id: row.id,
+        taskId: row.task_id,
+        date: row.date,
+        targetSeconds: row.target_seconds,
+        elapsedSeconds: row.elapsed_seconds,
+        isRunning: row.is_running,
+        startedAt: row.started_at,
+      }));
+
+      // Rows that already reached their target (e.g. the delete after a past
+      // auto-complete silently failed) shouldn't reappear as a stale timer.
+      const stale = loaded.filter((t) => {
+        const liveElapsed =
+          t.elapsedSeconds + (t.isRunning && t.startedAt ? Math.floor((Date.now() - new Date(t.startedAt).getTime()) / 1000) : 0);
+        return liveElapsed >= t.targetSeconds;
+      });
+      if (stale.length > 0) {
+        const staleIds = new Set(stale.map((t) => t.id));
+        setTaskTimers(loaded.filter((t) => !staleIds.has(t.id)));
+        for (const t of stale) {
+          const { error } = await supabase.from("task_timers").delete().eq("id", t.id);
+          if (error) console.error("Failed to clean up stale task timer:", error);
+        }
+      } else {
+        setTaskTimers(loaded);
+      }
     })();
   }, [userId, dateISO]);
 
@@ -128,8 +144,14 @@ export function useTaskTimers(
         const liveElapsed = t.elapsedSeconds + Math.floor((Date.now() - new Date(t.startedAt).getTime()) / 1000);
         if (liveElapsed >= t.targetSeconds) {
           setTaskTimers((prev) => prev.filter((x) => x.id !== t.id));
-          supabase.from("task_timers").delete().eq("id", t.id);
           onComplete(t.taskId);
+          supabase
+            .from("task_timers")
+            .delete()
+            .eq("id", t.id)
+            .then(({ error }) => {
+              if (error) console.error("Failed to delete completed task timer:", error);
+            });
         }
       });
     }, 1000);
