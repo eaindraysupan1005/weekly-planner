@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { Check, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabaseClient";
-import { DAY_NAMES, SHORT_NAMES, formatWeekRange, getWeekDates, isToday, isPastDate, isFutureDate, toISODate } from "../lib/dateUtils";
+import { DAY_NAMES, SHORT_NAMES, formatWeekRange, getWeekDates, getMonday, isToday, isPastDate, isFutureDate, toISODate } from "../lib/dateUtils";
 import { occurrenceKey, type TaskDef } from "../hooks/useTasks";
 import { TaskRow } from "../components/TaskRow";
 
@@ -30,6 +30,13 @@ export function WeekGridPage({
   });
 
   const weekDates = getWeekDates(weekOffset);
+
+  const createdAtMonday = getMonday(new Date(session.user.created_at ?? Date.now()));
+  const currentMonday = getMonday(new Date());
+  const minWeekOffset = Math.round(
+    (createdAtMonday.getTime() - currentMonday.getTime()) / (7 * 24 * 60 * 60 * 1000),
+  );
+  const atOldestWeek = weekOffset <= minWeekOffset;
 
   function DayColumn({ dayIdx }: { dayIdx: number }) {
     const date = weekDates[dayIdx];
@@ -245,8 +252,10 @@ export function WeekGridPage({
       {/* Bottom week navigation */}
       <div className="flex justify-center gap-3 pb-10">
         <button
-          onClick={() => setWeekOffset((w) => w - 1)}
-          className="flex items-center gap-2 h-11 px-5 rounded-2xl border transition-all duration-150 hover:scale-105 hover:brightness-95 active:scale-100 cursor-pointer"
+          onClick={() => setWeekOffset((w) => Math.max(minWeekOffset, w - 1))}
+          disabled={atOldestWeek}
+          title={atOldestWeek ? "No weeks before your account was created" : undefined}
+          className="flex items-center gap-2 h-11 px-5 rounded-2xl border transition-all duration-150 hover:scale-105 hover:brightness-95 active:scale-100 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:brightness-100"
           style={{ borderColor: "rgba(225,53,153,0.2)", background: "#fff5fb", color: "#1c0411" }}
         >
           <ChevronLeft size={16} />

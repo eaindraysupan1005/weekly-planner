@@ -1,6 +1,15 @@
 export const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 export const SHORT_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+export function getMonday(date: Date): Date {
+  const dow = date.getDay();
+  const mondayShift = dow === 0 ? -6 : 1 - dow;
+  const monday = new Date(date);
+  monday.setDate(date.getDate() + mondayShift);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+
 export function getWeekDates(offset: number): Date[] {
   const today = new Date();
   const dow = today.getDay();
