@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { toISODate } from "../lib/dateUtils";
 
 export interface TaskDef {
   id: string;
@@ -8,6 +9,7 @@ export interface TaskDef {
   repeat: "once" | "weekly" | "daily";
   dayIdx: number;
   date?: string; // ISO date, only set when repeat === "once"
+  createdDate: string; // ISO date the task was created, used to keep weekly/daily tasks off past days
 }
 
 export function occurrenceKey(taskId: string, dateISO: string) {
@@ -39,6 +41,7 @@ export function useTasks(userId: string | undefined) {
           repeat: row.repeat,
           dayIdx: row.day_idx,
           date: row.date ?? undefined,
+          createdDate: toISODate(new Date(row.created_at)),
         })),
       );
 
@@ -51,9 +54,11 @@ export function useTasks(userId: string | undefined) {
   }, [userId]);
 
   const getTasksForDay = (dayIdx: number, dateISO: string): TaskDef[] =>
-    tasks.filter(
-      (t) => t.repeat === "daily" || (t.dayIdx === dayIdx && (t.repeat === "weekly" || t.date === dateISO)),
-    );
+    tasks.filter((t) => {
+      if (t.repeat === "daily") return dateISO >= t.createdDate;
+      if (t.repeat === "weekly") return t.dayIdx === dayIdx && dateISO >= t.createdDate;
+      return t.dayIdx === dayIdx && t.date === dateISO;
+    });
 
   const toggleTask = async (taskId: string, dateISO: string) => {
     if (!userId) return;
@@ -116,6 +121,7 @@ export function useTasks(userId: string | undefined) {
         repeat: data.repeat,
         dayIdx: data.day_idx,
         date: data.date ?? undefined,
+        createdDate: toISODate(new Date(data.created_at)),
       },
     ]);
     return data.id;

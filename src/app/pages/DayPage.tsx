@@ -251,7 +251,10 @@ export function DayPage({
         isPast={isPast}
         onSubmit={async ({ text, duration, repeat }) => {
           const newTaskId = await addTask({ text, duration, repeat, dayIdx, dateISO });
-          if (newTaskId) setModalOpen(false);
+          if (newTaskId) {
+            if (isPast) toggleTask(newTaskId, dateISO);
+            setModalOpen(false);
+          }
         }}
       />
 
