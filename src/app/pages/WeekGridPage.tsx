@@ -252,6 +252,15 @@ export function WeekGridPage({
           <ChevronLeft size={16} />
           <span className="text-xs font-bold">Previous week</span>
         </button>
+        {weekOffset !== 0 && (
+          <button
+            onClick={() => setWeekOffset(0)}
+            className="flex items-center gap-2 h-11 px-5 rounded-2xl transition-all duration-150 hover:scale-105 hover:brightness-110 active:scale-100 cursor-pointer"
+            style={{ background: "#e13599", color: "#ffffff" }}
+          >
+            <span className="text-xs font-bold">This week</span>
+          </button>
+        )}
         <button
           onClick={() => setWeekOffset((w) => w + 1)}
           className="flex items-center gap-2 h-11 px-5 rounded-2xl border transition-all duration-150 hover:scale-105 hover:brightness-95 active:scale-100 cursor-pointer"
