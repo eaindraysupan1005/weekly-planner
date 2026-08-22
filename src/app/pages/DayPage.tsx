@@ -10,6 +10,7 @@ import { TaskModal } from "../components/TaskModal";
 import { TimerStartModal } from "../components/TimerStartModal";
 import { TimerCard } from "../components/TimerCard";
 import { TaskTimerCard } from "../components/TaskTimerCard";
+import { playSuccessSound } from "../../lib/playSound";
 
 export function DayPage({
   userId,
@@ -80,6 +81,7 @@ export function DayPage({
     dateISO ?? todayISO,
     (taskId) => {
       if (dateISO) toggleTask(taskId, dateISO);
+      playSuccessSound();
     },
   );
 
