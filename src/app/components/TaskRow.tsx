@@ -42,23 +42,17 @@ export function TaskRow({
       <button
         onClick={(e) => {
           e.stopPropagation();
-          if (isFuture || isPast) return;
+          if (isFuture) return;
           onToggle();
         }}
-        disabled={isFuture || isPast}
-        title={
-          isFuture
-            ? "Can't mark future tasks as complete"
-            : isPast
-              ? "This day has passed and is locked"
-              : undefined
-        }
+        disabled={isFuture}
+        title={isFuture ? "Can't mark future tasks as complete" : undefined}
         className="mt-1 flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-150 hover:scale-125"
         style={{
           background: isDone ? "#e6e35a" : "transparent",
           borderColor: isDone ? "#1c0411" : "#d490b8",
-          cursor: isFuture || isPast ? "not-allowed" : "pointer",
-          opacity: isFuture || isPast ? 0.5 : 1,
+          cursor: isFuture ? "not-allowed" : "pointer",
+          opacity: isFuture ? 0.5 : 1,
         }}
       >
         {isDone && <Check size={11} strokeWidth={3.5} color="#1c0411" />}
